@@ -1,265 +1,635 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fly or Die - Simplified</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background-color: #222;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      user-select: none;
-    }
-    #gameCanvas {
-      display: block;
-      margin: 0 auto;
-      background-color: #333;
-      border: 2px solid #555;
-      background-image: radial-gradient(circle at center, #444 0%, #222 80%);
-    }
-    #score {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 20px;
-      font-weight: bold;
-      z-index: 10;
-    }
-    #gameOver {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 36px;
-      font-weight: bold;
-      color: #f33;
-      display: none;
-      z-index: 20;
-      text-align: center;
-    }
-    #restartBtn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-      background-color: #f33;
-      border: none;
-      color: white;
-      border-radius: 5px;
-    }
-    #restartBtn:hover {
-      background-color: #d22;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fly or Die - Ultimate Edition</title>
+<style>
+  /* Reset and base styles */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: radial-gradient(circle at center, #121212 0%, #000 100%);
+    color: #eee;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  #gameContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: radial-gradient(circle at center, #222 0%, #111 90%);
+    border: 3px solid #0f0;
+    box-shadow: 0 0 20px #0f0;
+    max-width: 100%;
+    height: 100vh;
+  }
+  #ui {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    color: #0f0;
+    font-weight: bold;
+    font-size: 20px;
+    text-shadow: 0 0 5px #0f0;
+    pointer-events: none;
+    user-select: none;
+    z-index: 10;
+  }
+  #startScreen, #gameOverScreen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    border: 2px solid #0f0;
+    border-radius: 12px;
+    padding: 30px 40px;
+    max-width: 400px;
+    box-shadow: 0 0 20px #0f0;
+    text-align: center;
+    z-index: 20;
+    user-select: text;
+  }
+  #startScreen h1, #gameOverScreen h1 {
+    margin: 0 0 20px 0;
+    font-size: 36px;
+    color: #0f0;
+    text-shadow: 0 0 15px #0f0;
+  }
+  #startScreen p, #gameOverScreen p {
+    font-size: 16px;
+    margin: 10px 0;
+    line-height: 1.4;
+  }
+  button {
+    background-color: #0f0;
+    border: none;
+    padding: 14px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #000;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #0f0;
+    transition: background-color 0.3s ease;
+    user-select: none;
+  }
+  button:hover {
+    background-color: #0c0;
+  }
+  .hidden {
+    display: none;
+  }
+  #leaderboard {
+    margin-top: 15px;
+    text-align: left;
+    font-size: 14px;
+    max-height: 150px;
+    overflow-y: auto;
+    color: #0f0;
+    border-top: 1px solid #0f0;
+    padding-top: 10px;
+  }
+  #leaderboard h3 {
+    margin: 0 0 10px 0;
+    font-weight: bold;
+  }
+  #leaderboard ol {
+    padding-left: 20px;
+    margin: 0;
+  }
+  #leaderboard li {
+    margin-bottom: 5px;
+  }
+  #powerupIndicator {
+    font-size: 16px;
+    color: #ff0;
+    text-shadow: 0 0 5px #ff0;
+    pointer-events: none;
+    user-select: none;
+  }
+</style>
 </head>
 <body>
-  <div id="score">Score: 0</div>
-  <div id="gameOver">
-    Game Over<br/>
-    <button id="restartBtn">Restart</button>
+<div id="gameContainer">
+  <canvas id="gameCanvas" width="900" height="600"></canvas>
+  <div id="ui">
+    <div id="score">Score: 0</div>
+    <div id="lives">Lives: 10</div>
+    <div id="powerupIndicator"></div>
   </div>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreDisplay = document.getElementById('score');
-    const gameOverDisplay = document.getElementById('gameOver');
-    const restartBtn = document.getElementById('restartBtn');
+  <div id="startScreen">
+    <h1>Fly or Die - Ultimate Edition</h1>
+    <p>Control your creature with arrow keys or WASD.</p>
+    <p>Eat food and smaller enemies to grow and score points.</p>
+    <p>Avoid enemies bigger than you or lose a life.</p>
+    <p>You have 10 lives. Survive and score as much as possible!</p>
+    <p>Collect power-ups for temporary boosts.</p>
+    <button id="startBtn">Start Game</button>
+  </div>
 
-    const PLAYER_COLOR = '#4CAF50';
-    const FOOD_COLOR = '#FFEB3B';
-    const ENEMY_COLOR = '#F44336';
+  <div id="gameOverScreen" class="hidden">
+    <h1>Game Over</h1>
+    <p id="finalScore"></p>
+    <div id="leaderboard">
+      <h3>Leaderboard</h3>
+      <ol id="leaderboardList"></ol>
+    </div>
+    <button id="restartBtn">Play Again</button>
+  </div>
+</div>
 
-    class Entity {
-      constructor(x, y, radius, color) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.color = color;
-      }
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-      }
-      distanceTo(other) {
-        const dx = this.x - other.x;
-        const dy = this.y - other.y;
-        return Math.sqrt(dx * dx + dy * dy);
-      }
-      collidesWith(other) {
-        return this.distanceTo(other) < this.radius + other.radius;
-      }
+<script>
+  // Audio context and sounds
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContext();
+
+  function playSound(freq, duration, type = 'sine', volume = 0.1) {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + duration);
+  }
+
+  // Particle system for effects
+  class Particle {
+    constructor(x, y, color) {
+      this.x = x;
+      this.y = y;
+      this.radius = Math.random() * 3 + 2;
+      this.color = color;
+      this.vx = (Math.random() - 0.5) * 4;
+      this.vy = (Math.random() - 0.5) * 4;
+      this.alpha = 1;
+      this.life = 30 + Math.random() * 20;
     }
-
-    class Player extends Entity {
-      constructor(x, y) {
-        super(x, y, 20, PLAYER_COLOR);
-        this.speed = 3;
-        this.vx = 0;
-        this.vy = 0;
-        this.score = 0;
-      }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        // Keep player inside canvas
-        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-      }
-      grow(amount) {
-        this.radius += amount;
-      }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.alpha -= 1 / this.life;
+      this.radius *= 0.95;
     }
-
-    class Food extends Entity {
-      constructor(x, y) {
-        super(x, y, 8, FOOD_COLOR);
-      }
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.beginPath();
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 10;
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
+  }
 
-    class Enemy extends Entity {
-      constructor(x, y, radius, speed) {
-        super(x, y, radius, ENEMY_COLOR);
-        this.speed = speed;
-        this.vx = (Math.random() * 2 - 1) * speed;
-        this.vy = (Math.random() * 2 - 1) * speed;
-      }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        // Bounce off walls
-        if (this.x < this.radius || this.x > canvas.width - this.radius) this.vx *= -1;
-        if (this.y < this.radius || this.y > canvas.height - this.radius) this.vy *= -1;
-      }
+  // Entity base class
+  class Entity {
+    constructor(x, y, radius, color) {
+      this.x = x;
+      this.y = y;
+      this.radius = radius;
+      this.color = color;
     }
-
-    let player;
-    let foods = [];
-    let enemies = [];
-    let keys = {};
-    let gameRunning = true;
-
-    function spawnFood() {
-      const x = Math.random() * (canvas.width - 16) + 8;
-      const y = Math.random() * (canvas.height - 16) + 8;
-      foods.push(new Food(x, y));
+    draw(ctx) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 15;
+      ctx.fill();
+      ctx.restore();
     }
-
-    function spawnEnemy() {
-      const radius = 15 + Math.random() * 10;
-      const speed = 1 + Math.random() * 1.5;
-      const x = Math.random() * (canvas.width - 2 * radius) + radius;
-      const y = Math.random() * (canvas.height - 2 * radius) + radius;
-      enemies.push(new Enemy(x, y, radius, speed));
+    distanceTo(other) {
+      const dx = this.x - other.x;
+      const dy = this.y - other.y;
+      return Math.sqrt(dx * dx + dy * dy);
     }
-
-    function resetGame() {
-      player = new Player(canvas.width / 2, canvas.height / 2);
-      foods = [];
-      enemies = [];
-      for (let i = 0; i < 20; i++) spawnFood();
-      for (let i = 0; i < 5; i++) spawnEnemy();
-      gameRunning = true;
-      scoreDisplay.textContent = 'Score: 0';
-      gameOverDisplay.style.display = 'none';
+    collidesWith(other) {
+      return this.distanceTo(other) < this.radius + other.radius;
     }
+  }
 
-    function update() {
-      if (!gameRunning) return;
-
-      // Player movement based on keys
-      player.vx = 0;
-      player.vy = 0;
-      if (keys['ArrowUp'] || keys['w']) player.vy = -player.speed;
-      if (keys['ArrowDown'] || keys['s']) player.vy = player.speed;
-      if (keys['ArrowLeft'] || keys['a']) player.vx = -player.speed;
-      if (keys['ArrowRight'] || keys['d']) player.vx = player.speed;
-
-      player.update();
-
-      // Check collision with food
-      for (let i = foods.length - 1; i >= 0; i--) {
-        if (player.collidesWith(foods[i])) {
-          player.grow(1);
-          player.score += 1;
-          foods.splice(i, 1);
-          spawnFood();
-          scoreDisplay.textContent = 'Score: ' + player.score;
+  // Player class
+  class Player extends Entity {
+    constructor(x, y) {
+      super(x, y, 20, '#4CAF50');
+      this.speed = 3;
+      this.vx = 0;
+      this.vy = 0;
+      this.score = 0;
+      this.lives = 10;
+      this.powerup = null;
+      this.powerupTimer = 0;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      // Keep player inside canvas
+      this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+      this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+      // Powerup timer decrement
+      if (this.powerupTimer > 0) {
+        this.powerupTimer--;
+        if (this.powerupTimer === 0) {
+          this.powerup = null;
+          powerupIndicator.textContent = '';
+          this.speed = 3;
+          this.color = '#4CAF50';
         }
       }
+    }
+    grow(amount) {
+      this.radius += amount;
+      this.score += Math.floor(amount * 10);
+      scoreDisplay.textContent = 'Score: ' + this.score;
+    }
+    loseLife() {
+      this.lives--;
+      livesDisplay.textContent = 'Lives: ' + this.lives;
+      playSound(150, 0.2, 'triangle', 0.3);
+      if (this.lives <= 0) {
+        gameOver();
+      }
+    }
+    applyPowerup(type) {
+      this.powerup = type;
+      this.powerupTimer = 600; // 10 seconds at 60fps
+      powerupIndicator.textContent = 'Power-up: ' + type;
+      if (type === 'speed') {
+        this.speed = 6;
+        this.color = '#00FFFF';
+      } else if (type === 'shield') {
+        this.color = '#FFD700';
+      }
+      playSound(600, 0.3, 'square', 0.4);
+    }
+  }
 
-      // Update enemies and check collision with player
-      for (let enemy of enemies) {
-        enemy.update();
-        if (player.collidesWith(enemy)) {
-          if (player.radius > enemy.radius) {
-            // Player eats enemy
-            player.grow(enemy.radius * 0.5);
-            player.score += Math.floor(enemy.radius);
-            enemies.splice(enemies.indexOf(enemy), 1);
-            spawnEnemy();
-            scoreDisplay.textContent = 'Score: ' + player.score;
-          } else {
-            // Player dies
-            gameOver();
-            break;
+  // Food class
+  class Food extends Entity {
+    constructor(x, y) {
+      super(x, y, 8, '#FFEB3B');
+    }
+  }
+
+  // Powerup class
+  class Powerup extends Entity {
+    constructor(x, y, type) {
+      super(x, y, 10, type === 'speed' ? '#00FFFF' : '#FFD700');
+      this.type = type;
+      this.angle = 0;
+    }
+    draw(ctx) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.beginPath();
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 15;
+      ctx.moveTo(0, -this.radius);
+      for (let i = 0; i < 5; i++) {
+        ctx.lineTo(this.radius * Math.cos((i * 2 * Math.PI) / 5), this.radius * Math.sin((i * 2 * Math.PI) / 5));
+        ctx.lineTo(this.radius / 2 * Math.cos(((i * 2 + 1) * Math.PI) / 5), this.radius / 2 * Math.sin(((i * 2 + 1) * Math.PI) / 5));
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      this.angle += 0.05;
+    }
+  }
+
+  // Enemy class with AI behaviors
+  class Enemy extends Entity {
+    constructor(x, y, radius, speed, color, behavior) {
+      super(x, y, radius, color);
+      this.speed = speed;
+      this.vx = (Math.random() * 2 - 1) * speed;
+      this.vy = (Math.random() * 2 - 1) * speed;
+      this.behavior = behavior; // 'wander', 'chase', 'flee'
+      this.changeDirTimer = 0;
+    }
+    update(player) {
+      if (this.behavior === 'chase') {
+        // Move toward player if smaller
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          this.vx = (dx / dist) * this.speed;
+          this.vy = (dy / dist) * this.speed;
+        }
+      } else if (this.behavior === 'flee') {
+        // Move away from player if bigger
+        const dx = this.x - player.x;
+        const dy = this.y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          this.vx = (dx / dist) * this.speed;
+          this.vy = (dy / dist) * this.speed;
+        }
+      } else {
+        // Wander randomly, change direction occasionally
+        this.changeDirTimer--;
+        if (this.changeDirTimer <= 0) {
+          this.vx = (Math.random() * 2 - 1) * this.speed;
+          this.vy = (Math.random() * 2 - 1) * this.speed;
+          this.changeDirTimer = 60 + Math.floor(Math.random() * 120);
+        }
+      }
+      this.x += this.vx;
+      this.y += this.vy;
+      // Bounce off walls
+      if (this.x < this.radius) {
+        this.x = this.radius;
+        this.vx *= -1;
+      }
+      if (this.x > canvas.width - this.radius) {
+        this.x = canvas.width - this.radius;
+        this.vx *= -1;
+      }
+      if (this.y < this.radius) {
+        this.y = this.radius;
+        this.vy *= -1;
+      }
+      if (this.y > canvas.height - this.radius) {
+        this.y = canvas.height - this.radius;
+        this.vy *= -1;
+      }
+    }
+  }
+
+  // Globals
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreDisplay = document.getElementById('score');
+  const livesDisplay = document.getElementById('lives');
+  const powerupIndicator = document.getElementById('powerupIndicator');
+  const startScreen = document.getElementById('startScreen');
+  const startBtn = document.getElementById('startBtn');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const finalScoreDisplay = document.getElementById('finalScore');
+  const leaderboardList = document.getElementById('leaderboardList');
+  const restartBtn = document.getElementById('restartBtn');
+
+  let player;
+  let foods = [];
+  let enemies = [];
+  let powerups = [];
+  let particles = [];
+  let keys = {};
+  let gameRunning = false;
+
+  // Leaderboard management
+  function loadLeaderboard() {
+    const data = localStorage.getItem('flyOrDieLeaderboard');
+    if (data) {
+      return JSON.parse(data);
+    }
+    return [];
+  }
+  function saveLeaderboard(scores) {
+    localStorage.setItem('flyOrDieLeaderboard', JSON.stringify(scores));
+  }
+  function updateLeaderboard(score) {
+    let scores = loadLeaderboard();
+    scores.push(score);
+    scores.sort((a,b) => b - a);
+    if (scores.length > 10) scores = scores.slice(0,10);
+    saveLeaderboard(scores);
+    renderLeaderboard(scores);
+  }
+  function renderLeaderboard(scores) {
+    leaderboardList.innerHTML = '';
+    scores.forEach((score, i) => {
+      const li = document.createElement('li');
+      li.textContent = `${i+1}. ${score}`;
+      leaderboardList.appendChild(li);
+    });
+  }
+
+  // Spawn functions
+  function spawnFood() {
+    const x = Math.random() * (canvas.width - 16) + 8;
+    const y = Math.random() * (canvas.height - 16) + 8;
+    foods.push(new Food(x, y));
+  }
+  function spawnPowerup() {
+    const x = Math.random() * (canvas.width - 20) + 10;
+    const y = Math.random() * (canvas.height - 20) + 10;
+    const type = Math.random() < 0.5 ? 'speed' : 'shield';
+    powerups.push(new Powerup(x, y, type));
+  }
+  function spawnEnemy() {
+    const radius = 15 + Math.random() * 20;
+    const speed = 1 + Math.random() * 2;
+    const x = Math.random() * (canvas.width - 2 * radius) + radius;
+    const y = Math.random() * (canvas.height - 2 * radius) + radius;
+    const color = ['#F44336', '#FF5722', '#E91E63', '#9C27B0'][Math.floor(Math.random() * 4)];
+    // Behavior depends on size relative to player (set later)
+    enemies.push(new Enemy(x, y, radius, speed, color, 'wander'));
+  }
+
+  // Reset game state
+  function resetGame() {
+    player = new Player(canvas.width / 2, canvas.height / 2);
+    foods = [];
+    enemies = [];
+    powerups = [];
+    particles = [];
+    keys = {};
+    gameRunning = true;
+    scoreDisplay.textContent = 'Score: 0';
+    livesDisplay.textContent = 'Lives: 10';
+    powerupIndicator.textContent = '';
+    gameOverScreen.classList.add('hidden');
+    startScreen.classList.add('hidden');
+    // Spawn initial entities
+    for (let i = 0; i < 30; i++) spawnFood();
+    for (let i = 0; i < 10; i++) spawnEnemy();
+    for (let i = 0; i < 3; i++) spawnPowerup();
+  }
+
+  // Update game state
+  function update() {
+    if (!gameRunning) return;
+
+    // Player movement
+    player.vx = 0;
+    player.vy = 0;
+    if (keys['ArrowUp'] || keys['w']) player.vy = -player.speed;
+    if (keys['ArrowDown'] || keys['s']) player.vy = player.speed;
+    if (keys['ArrowLeft'] || keys['a']) player.vx = -player.speed;
+    if (keys['ArrowRight'] || keys['d']) player.vx = player.speed;
+
+    player.update();
+
+    // Update enemies behavior based on player size
+    enemies.forEach(enemy => {
+      if (player.radius > enemy.radius) {
+        enemy.behavior = 'flee';
+      } else {
+        enemy.behavior = 'chase';
+      }
+      enemy.update(player);
+    });
+
+    // Check collisions with food
+    for (let i = foods.length - 1; i >= 0; i--) {
+      if (player.collidesWith(foods[i])) {
+        player.grow(0.5);
+        spawnParticles(foods[i].x, foods[i].y, foods[i].color);
+        foods.splice(i, 1);
+        spawnFood();
+        playSound(800, 0.1, 'square', 0.15);
+      }
+    }
+
+    // Check collisions with powerups
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      if (player.collidesWith(powerups[i])) {
+        player.applyPowerup(powerups[i].type);
+        spawnParticles(powerups[i].x, powerups[i].y, powerups[i].color);
+        powerups.splice(i, 1);
+        spawnPowerup();
+      }
+    }
+
+    // Check collisions with enemies
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const enemy = enemies[i];
+      if (player.collidesWith(enemy)) {
+        if (player.powerup === 'shield') {
+          // Shield powerup: eat enemy regardless of size
+          player.grow(enemy.radius * 0.7);
+          player.score += Math.floor(enemy.radius * 10);
+          spawnParticles(enemy.x, enemy.y, enemy.color);
+          enemies.splice(i, 1);
+          spawnEnemy();
+          playSound(1000, 0.2, 'triangle', 0.3);
+        } else if (player.radius > enemy.radius) {
+          // Player eats enemy
+          player.grow(enemy.radius * 0.7);
+          player.score += Math.floor(enemy.radius * 10);
+          spawnParticles(enemy.x, enemy.y, enemy.color);
+          enemies.splice(i, 1);
+          spawnEnemy();
+          playSound(1000, 0.2, 'triangle', 0.3);
+        } else {
+          // Player loses a life
+          player.loseLife();
+          // Knockback player
+          const dx = player.x - enemy.x;
+          const dy = player.y - enemy.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist > 0) {
+            player.x += (dx / dist) * 30;
+            player.y += (dy / dist) * 30;
           }
+          playSound(150, 0.3, 'triangle', 0.4);
         }
       }
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw food
-      for (let food of foods) {
-        food.draw();
-      }
-
-      // Draw enemies
-      for (let enemy of enemies) {
-        enemy.draw();
-      }
-
-      // Draw player
-      player.draw();
-    }
-
-    function gameOver() {
-      gameRunning = false;
-      gameOverDisplay.style.display = 'block';
-    }
-
-    function gameLoop() {
-      update();
-      draw();
-      if (gameRunning) {
-        requestAnimationFrame(gameLoop);
+    // Update particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      particles[i].update();
+      if (particles[i].alpha <= 0) {
+        particles.splice(i, 1);
       }
     }
+  }
 
-    window.addEventListener('keydown', (e) => {
-      keys[e.key] = true;
-    });
+  // Draw game state
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    window.addEventListener('keyup', (e) => {
-      keys[e.key] = false;
-    });
+    // Draw food
+    foods.forEach(food => food.draw(ctx));
 
-    restartBtn.addEventListener('click', () => {
-      resetGame();
-      gameLoop();
-    });
+    // Draw powerups
+    powerups.forEach(powerup => powerup.draw(ctx));
 
-    // Start the game
+    // Draw enemies
+    enemies.forEach(enemy => enemy.draw(ctx));
+
+    // Draw particles
+    particles.forEach(particle => particle.draw(ctx));
+
+    // Draw player
+    player.draw(ctx);
+  }
+
+  // Spawn particles for effects
+  function spawnParticles(x, y, color) {
+    for (let i = 0; i < 15; i++) {
+      particles.push(new Particle(x, y, color));
+    }
+  }
+
+  // Game over handler
+  function gameOver() {
+    gameRunning = false;
+    finalScoreDisplay.textContent = 'Your final score: ' + player.score;
+    updateLeaderboard(player.score);
+    renderLeaderboard(loadLeaderboard());
+    gameOverScreen.classList.remove('hidden');
+    startScreen.classList.add('hidden');
+  }
+
+  // Game loop
+  function gameLoop() {
+    update();
+    draw();
+    if (gameRunning) {
+      requestAnimationFrame(gameLoop);
+    }
+  }
+
+  // Event listeners
+  window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key] = false;
+  });
+
+  startBtn.addEventListener('click', () => {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
     resetGame();
     gameLoop();
-  </script>
+  });
+
+  restartBtn.addEventListener('click', () => {
+    resetGame();
+    gameLoop();
+  });
+
+  // Initialize leaderboard display
+  renderLeaderboard(loadLeaderboard());
+</script>
 </body>
 </html>
