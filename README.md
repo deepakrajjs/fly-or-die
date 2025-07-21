@@ -2,7 +2,7 @@
 
 **Fly or Die** is a fast-paced action game where you control a daring fly on a quest to survive against all odds! Dodge obstacles, collect power-ups, and aim for the highest score as you navigate through a world full of dangers. How long can you stay alive before you meet your fate?
 
-## Features
+## Features 
 
 - Addictive, skill-based gameplay
 - Increasing difficulty with each level
