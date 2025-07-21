@@ -5,7 +5,7 @@
 ## Features 
 
 - Addictive, skill-based gameplay
-- Increasing difficulty with each level 
+- Increasing difficulty with each level  
 - Power-ups and bonuses to boost your score
 - [Optional: Online leaderboards to compete with friends]
 - [Optional: Multiple playable characters]
