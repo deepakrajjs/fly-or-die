@@ -2,8 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Fly or Die - Ultimate Edition (Hard Mode)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Fly or Die - Ultimate Survival Game</title>
+
+<!-- PWA Meta Tags -->
+<meta name="description" content="An addictive survival game where you grow by eating smaller creatures while avoiding bigger threats. Featuring power-ups, boss battles, and multiple game modes!" />
+<meta name="theme-color" content="#ff0000" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Fly or Die" />
+
+<!-- PWA Links -->
+<link rel="manifest" href="./manifest.json" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
 <style>
   /* Reset and base styles */
   * {
@@ -122,6 +135,161 @@
     pointer-events: none;
     user-select: none;
   }
+  
+  /* Mobile Controls */
+  #mobileControls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    z-index: 30;
+    pointer-events: none;
+  }
+  
+  .mobile-control-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 15px;
+    border: 2px solid #f00;
+    pointer-events: auto;
+  }
+  
+  .mobile-btn {
+    background: rgba(255, 0, 0, 0.8);
+    border: 2px solid #f00;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    user-select: none;
+    cursor: pointer;
+  }
+  
+  .mobile-btn:active {
+    background: rgba(255, 0, 0, 1);
+    transform: scale(0.95);
+  }
+  
+  .mobile-btn.center {
+    background: rgba(255, 255, 0, 0.8);
+    border-color: #ff0;
+    color: #000;
+  }
+  
+  /* Pause Menu */
+  #pauseMenu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(30,0,0,0.95);
+    border: 2px solid #f00;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    z-index: 25;
+    max-width: 300px;
+  }
+  
+  #pauseMenu h2 {
+    color: #f00;
+    margin: 0 0 20px 0;
+    text-shadow: 0 0 10px #f00;
+  }
+  
+  .menu-btn {
+    background-color: #f00;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 5px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .menu-btn:hover {
+    background-color: #c00;
+  }
+  
+  /* Settings Menu */
+  #settingsMenu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(30,0,0,0.95);
+    border: 2px solid #f00;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: left;
+    z-index: 25;
+    max-width: 400px;
+  }
+  
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0;
+    color: #fff;
+  }
+  
+  .setting-row label {
+    font-weight: bold;
+  }
+  
+  .setting-row input[type="range"] {
+    width: 120px;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    #mobileControls {
+      display: block;
+    }
+    
+    canvas {
+      height: 70vh;
+    }
+    
+    #ui {
+      font-size: 16px;
+    }
+    
+    #startScreen, #gameOverScreen, #pauseMenu, #settingsMenu {
+      max-width: 90vw;
+      padding: 20px;
+    }
+  }
+  
+  @media (orientation: landscape) and (max-height: 500px) {
+    canvas {
+      height: 85vh;
+    }
+    
+    #mobileControls {
+      bottom: 10px;
+    }
+    
+    .mobile-control-pad {
+      grid-template-columns: repeat(3, 50px);
+      grid-template-rows: repeat(3, 50px);
+      gap: 8px;
+      padding: 8px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -134,14 +302,16 @@
   </div>
 
   <div id="startScreen">
-    <h1>Fly or Die - Ultimate Edition (Hard Mode)</h1>
-    <p>Control your creature with arrow keys or WASD.</p>
+    <h1>Fly or Die</h1>
+    <h2>Ultimate Survival Game</h2>
+    <p>Control your creature with arrow keys, WASD, or touch controls.</p>
     <p>Eat food and smaller enemies to grow and score points.</p>
     <p>Avoid enemies bigger than you or lose a life.</p>
     <p>You have 10 lives. Survive and score as much as possible!</p>
     <p>Collect power-ups for temporary boosts.</p>
     <p>Difficulty increases over time with more and faster enemies!</p>
     <button id="startBtn">Start Game</button>
+    <button id="settingsBtn" class="menu-btn">Settings</button>
   </div>
 
   <div id="gameOverScreen" class="hidden">
@@ -152,20 +322,113 @@
       <ol id="leaderboardList"></ol>
     </div>
     <button id="restartBtn">Play Again</button>
+    <button id="mainMenuBtn" class="menu-btn">Main Menu</button>
+  </div>
+
+  <div id="pauseMenu" class="hidden">
+    <h2>Game Paused</h2>
+    <button id="resumeBtn" class="menu-btn">Resume</button>
+    <button id="pauseSettingsBtn" class="menu-btn">Settings</button>
+    <button id="quitBtn" class="menu-btn">Quit to Menu</button>
+  </div>
+
+  <div id="settingsMenu" class="hidden">
+    <h2 style="color: #f00; text-align: center; margin-bottom: 20px;">Settings</h2>
+    <div class="setting-row">
+      <label for="soundVolume">Sound Volume:</label>
+      <input type="range" id="soundVolume" min="0" max="100" value="50">
+    </div>
+    <div class="setting-row">
+      <label for="musicVolume">Music Volume:</label>
+      <input type="range" id="musicVolume" min="0" max="100" value="30">
+    </div>
+    <div class="setting-row">
+      <label for="showFPS">Show FPS:</label>
+      <input type="checkbox" id="showFPS">
+    </div>
+    <div class="setting-row">
+      <label for="particleCount">Particle Effects:</label>
+      <select id="particleCount">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button id="saveSettingsBtn" class="menu-btn">Save & Close</button>
+    </div>
+  </div>
+
+  <!-- Mobile Controls -->
+  <div id="mobileControls">
+    <div class="mobile-control-pad">
+      <div></div>
+      <div class="mobile-btn" data-key="ArrowUp">↑</div>
+      <div></div>
+      <div class="mobile-btn" data-key="ArrowLeft">←</div>
+      <div class="mobile-btn center" data-key="pause">⏸</div>
+      <div class="mobile-btn" data-key="ArrowRight">→</div>
+      <div></div>
+      <div class="mobile-btn" data-key="ArrowDown">↓</div>
+      <div></div>
+    </div>
   </div>
 </div>
 
 <script>
+  // PWA Service Worker Registration
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((registration) => {
+          console.log('SW registered: ', registration);
+        })
+        .catch((registrationError) => {
+          console.log('SW registration failed: ', registrationError);
+        });
+    });
+  }
+
+  // Game Settings
+  let gameSettings = {
+    soundVolume: 50,
+    musicVolume: 30,
+    showFPS: false,
+    particleCount: 'medium'
+  };
+
+  // Load settings from localStorage
+  function loadSettings() {
+    const saved = localStorage.getItem('flyOrDieSettings');
+    if (saved) {
+      gameSettings = { ...gameSettings, ...JSON.parse(saved) };
+      updateSettingsUI();
+    }
+  }
+
+  function saveSettings() {
+    localStorage.setItem('flyOrDieSettings', JSON.stringify(gameSettings));
+  }
+
+  function updateSettingsUI() {
+    document.getElementById('soundVolume').value = gameSettings.soundVolume;
+    document.getElementById('musicVolume').value = gameSettings.musicVolume;
+    document.getElementById('showFPS').checked = gameSettings.showFPS;
+    document.getElementById('particleCount').value = gameSettings.particleCount;
+  }
+
   // Audio context and sounds
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioCtx = new AudioContext();
 
   function playSound(freq, duration, type = 'sine', volume = 0.1) {
+    if (gameSettings.soundVolume === 0) return;
+    
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime((volume * gameSettings.soundVolume) / 100, audioCtx.currentTime);
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     oscillator.start();
@@ -199,6 +462,34 @@
       ctx.shadowBlur = 10;
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // FPS Counter
+  class FPSCounter {
+    constructor() {
+      this.fps = 0;
+      this.frame = 0;
+      this.lastTime = performance.now();
+    }
+    
+    update() {
+      this.frame++;
+      const now = performance.now();
+      if (now - this.lastTime >= 1000) {
+        this.fps = Math.round((this.frame * 1000) / (now - this.lastTime));
+        this.frame = 0;
+        this.lastTime = now;
+      }
+    }
+    
+    draw(ctx) {
+      if (!gameSettings.showFPS) return;
+      ctx.save();
+      ctx.fillStyle = '#00ff00';
+      ctx.font = '16px monospace';
+      ctx.fillText(`FPS: ${this.fps}`, 10, canvas.height - 10);
       ctx.restore();
     }
   }
@@ -414,10 +705,18 @@
   const powerupIndicator = document.getElementById('powerupIndicator');
   const startScreen = document.getElementById('startScreen');
   const startBtn = document.getElementById('startBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
   const gameOverScreen = document.getElementById('gameOverScreen');
   const finalScoreDisplay = document.getElementById('finalScore');
   const leaderboardList = document.getElementById('leaderboardList');
   const restartBtn = document.getElementById('restartBtn');
+  const mainMenuBtn = document.getElementById('mainMenuBtn');
+  const pauseMenu = document.getElementById('pauseMenu');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const pauseSettingsBtn = document.getElementById('pauseSettingsBtn');
+  const quitBtn = document.getElementById('quitBtn');
+  const settingsMenu = document.getElementById('settingsMenu');
+  const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
   let player;
   let foods = [];
@@ -427,7 +726,17 @@
   let projectiles = [];
   let keys = {};
   let gameRunning = false;
+  let gamePaused = false;
   let frameCount = 0;
+  let fpsCounter = new FPSCounter();
+
+  // Touch controls state
+  let touchControls = {
+    up: false,
+    down: false,
+    left: false,
+    right: false
+  };
 
   // Leaderboard management
   function loadLeaderboard() {
@@ -503,24 +812,52 @@
     particles = [];
     projectiles = [];
     keys = {};
+    touchControls = { up: false, down: false, left: false, right: false };
     gameRunning = true;
+    gamePaused = false;
     frameCount = 0;
     scoreDisplay.textContent = 'Score: 0';
     livesDisplay.textContent = 'Lives: 10';
     powerupIndicator.textContent = '';
-    gameOverScreen.classList.add('hidden');
-    startScreen.classList.add('hidden');
+    hideAllMenus();
     // Spawn initial entities
     for (let i = 0; i < 30; i++) spawnFood();
     for (let i = 0; i < 10; i++) spawnEnemy();
     for (let i = 0; i < 3; i++) spawnPowerup();
   }
 
+  // Menu management
+  function hideAllMenus() {
+    gameOverScreen.classList.add('hidden');
+    startScreen.classList.add('hidden');
+    pauseMenu.classList.add('hidden');
+    settingsMenu.classList.add('hidden');
+  }
+
+  function showMainMenu() {
+    hideAllMenus();
+    startScreen.classList.remove('hidden');
+    gameRunning = false;
+    gamePaused = false;
+  }
+
+  function pauseGame() {
+    if (!gameRunning) return;
+    gamePaused = true;
+    pauseMenu.classList.remove('hidden');
+  }
+
+  function resumeGame() {
+    gamePaused = false;
+    pauseMenu.classList.add('hidden');
+  }
+
   // Update game state
   function update() {
-    if (!gameRunning) return;
+    if (!gameRunning || gamePaused) return;
 
     frameCount++;
+    fpsCounter.update();
 
     // Increase difficulty over time
     if (frameCount % 600 === 0) { // every 10 seconds at 60fps
@@ -530,13 +867,13 @@
       }
     }
 
-    // Player movement
+    // Player movement (keyboard + touch)
     player.vx = 0;
     player.vy = 0;
-    if (keys['ArrowUp'] || keys['w']) player.vy = -player.speed;
-    if (keys['ArrowDown'] || keys['s']) player.vy = player.speed;
-    if (keys['ArrowLeft'] || keys['a']) player.vx = -player.speed;
-    if (keys['ArrowRight'] || keys['d']) player.vx = player.speed;
+    if (keys['ArrowUp'] || keys['w'] || touchControls.up) player.vy = -player.speed;
+    if (keys['ArrowDown'] || keys['s'] || touchControls.down) player.vy = player.speed;
+    if (keys['ArrowLeft'] || keys['a'] || touchControls.left) player.vx = -player.speed;
+    if (keys['ArrowRight'] || keys['d'] || touchControls.right) player.vx = player.speed;
 
     player.update();
 
@@ -639,6 +976,8 @@
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    if (!gameRunning) return;
+
     // Draw food
     foods.forEach(food => food.draw(ctx));
 
@@ -660,16 +999,23 @@
       ctx.restore();
     });
 
-    // Draw particles
-    particles.forEach(particle => particle.draw(ctx));
+    // Draw particles (limited by settings)
+    const particleLimit = gameSettings.particleCount === 'low' ? 20 : 
+                         gameSettings.particleCount === 'high' ? 100 : 50;
+    particles.slice(0, particleLimit).forEach(particle => particle.draw(ctx));
 
     // Draw player
     player.draw(ctx);
+
+    // Draw FPS counter
+    fpsCounter.draw(ctx);
   }
 
   // Spawn particles for effects
   function spawnParticles(x, y, color) {
-    for (let i = 0; i < 15; i++) {
+    const count = gameSettings.particleCount === 'low' ? 5 : 
+                  gameSettings.particleCount === 'high' ? 25 : 15;
+    for (let i = 0; i < count; i++) {
       particles.push(new Particle(x, y, color));
     }
   }
@@ -677,11 +1023,12 @@
   // Game over handler
   function gameOver() {
     gameRunning = false;
+    gamePaused = false;
     finalScoreDisplay.textContent = 'Your final score: ' + player.score;
     updateLeaderboard(player.score);
     renderLeaderboard(loadLeaderboard());
+    hideAllMenus();
     gameOverScreen.classList.remove('hidden');
-    startScreen.classList.add('hidden');
   }
 
   // Game loop
@@ -696,11 +1043,55 @@
   // Event listeners
   window.addEventListener('keydown', e => {
     keys[e.key] = true;
+    
+    // Pause with Escape key
+    if (e.key === 'Escape') {
+      if (gameRunning && !gamePaused) {
+        pauseGame();
+      } else if (gamePaused) {
+        resumeGame();
+      }
+    }
   });
+  
   window.addEventListener('keyup', e => {
     keys[e.key] = false;
   });
 
+  // Mobile touch controls
+  document.querySelectorAll('.mobile-btn').forEach(btn => {
+    btn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const key = btn.dataset.key;
+      
+      if (key === 'pause') {
+        if (gameRunning && !gamePaused) {
+          pauseGame();
+        } else if (gamePaused) {
+          resumeGame();
+        }
+      } else {
+        if (key === 'ArrowUp') touchControls.up = true;
+        if (key === 'ArrowDown') touchControls.down = true;
+        if (key === 'ArrowLeft') touchControls.left = true;
+        if (key === 'ArrowRight') touchControls.right = true;
+      }
+    });
+    
+    btn.addEventListener('touchend', e => {
+      e.preventDefault();
+      const key = btn.dataset.key;
+      
+      if (key !== 'pause') {
+        if (key === 'ArrowUp') touchControls.up = false;
+        if (key === 'ArrowDown') touchControls.down = false;
+        if (key === 'ArrowLeft') touchControls.left = false;
+        if (key === 'ArrowRight') touchControls.right = false;
+      }
+    });
+  });
+
+  // Menu button event listeners
   startBtn.addEventListener('click', () => {
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
@@ -709,13 +1100,79 @@
     gameLoop();
   });
 
+  settingsBtn.addEventListener('click', () => {
+    hideAllMenus();
+    settingsMenu.classList.remove('hidden');
+  });
+
   restartBtn.addEventListener('click', () => {
     resetGame();
     gameLoop();
   });
 
-  // Initialize leaderboard display
+  mainMenuBtn.addEventListener('click', () => {
+    showMainMenu();
+  });
+
+  resumeBtn.addEventListener('click', () => {
+    resumeGame();
+  });
+
+  pauseSettingsBtn.addEventListener('click', () => {
+    pauseMenu.classList.add('hidden');
+    settingsMenu.classList.remove('hidden');
+  });
+
+  quitBtn.addEventListener('click', () => {
+    showMainMenu();
+  });
+
+  saveSettingsBtn.addEventListener('click', () => {
+    // Update settings from UI
+    gameSettings.soundVolume = parseInt(document.getElementById('soundVolume').value);
+    gameSettings.musicVolume = parseInt(document.getElementById('musicVolume').value);
+    gameSettings.showFPS = document.getElementById('showFPS').checked;
+    gameSettings.particleCount = document.getElementById('particleCount').value;
+    
+    saveSettings();
+    
+    if (gamePaused) {
+      settingsMenu.classList.add('hidden');
+      pauseMenu.classList.remove('hidden');
+    } else {
+      hideAllMenus();
+      startScreen.classList.remove('hidden');
+    }
+  });
+
+  // Canvas resize handling
+  function resizeCanvas() {
+    const container = document.getElementById('gameContainer');
+    const rect = container.getBoundingClientRect();
+    
+    // Maintain aspect ratio
+    const aspectRatio = 900 / 600;
+    let newWidth = rect.width;
+    let newHeight = rect.width / aspectRatio;
+    
+    if (newHeight > rect.height) {
+      newHeight = rect.height;
+      newWidth = rect.height * aspectRatio;
+    }
+    
+    canvas.style.width = newWidth + 'px';
+    canvas.style.height = newHeight + 'px';
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100);
+  });
+
+  // Initialize
+  loadSettings();
   renderLeaderboard(loadLeaderboard());
+  resizeCanvas();
 </script>
 </body>
 </html>
