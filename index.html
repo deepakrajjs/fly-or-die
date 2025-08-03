@@ -62,7 +62,7 @@
     user-select: none;
     z-index: 10;
   }
-  #startScreen, #gameOverScreen {
+  #startScreen, #gameOverScreen, #pauseMenu, #settingsMenu, #characterScreen, #achievementsScreen {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -224,7 +224,7 @@
   }
   
   /* Settings Menu */
-  #settingsMenu {
+  #settingsMenu, #characterScreen, #achievementsScreen {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -236,6 +236,55 @@
     text-align: left;
     z-index: 25;
     max-width: 400px;
+  }
+
+  #characterScreen, #achievementsScreen {
+    text-align: center;
+  }
+
+  .character-option {
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #666;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    color: #fff;
+  }
+
+  .character-option:hover {
+    border-color: #f00;
+  }
+
+  .character-option.selected {
+    border-color: #0f0;
+    background: rgba(0, 255, 0, 0.1);
+  }
+
+  .character-option.locked {
+    border-color: #444;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .achievement-item {
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    padding: 10px;
+    margin: 8px 0;
+    color: #fff;
+    text-align: left;
+  }
+
+  .achievement-item.unlocked {
+    border-left: 4px solid #0f0;
+  }
+
+  .achievement-item.locked {
+    border-left: 4px solid #666;
+    opacity: 0.6;
   }
   
   .setting-row {
@@ -311,7 +360,26 @@
     <p>Collect power-ups for temporary boosts.</p>
     <p>Difficulty increases over time with more and faster enemies!</p>
     <button id="startBtn">Start Game</button>
+    <button id="characterBtn" class="menu-btn">Select Character</button>
     <button id="settingsBtn" class="menu-btn">Settings</button>
+    <button id="achievementsBtn" class="menu-btn">Achievements</button>
+  </div>
+
+  <div id="characterScreen" class="hidden">
+    <h2 style="color: #f00; text-align: center; margin-bottom: 20px;">Select Character</h2>
+    <div id="characterList"></div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button id="selectCharacterBtn" class="menu-btn">Select</button>
+      <button id="backToMenuBtn" class="menu-btn">Back</button>
+    </div>
+  </div>
+
+  <div id="achievementsScreen" class="hidden">
+    <h2 style="color: #f00; text-align: center; margin-bottom: 20px;">Achievements</h2>
+    <div id="achievementsList" style="max-height: 300px; overflow-y: auto;"></div>
+    <div style="text-align: center; margin-top: 20px;">
+      <button id="backFromAchievementsBtn" class="menu-btn">Back</button>
+    </div>
   </div>
 
   <div id="gameOverScreen" class="hidden">
@@ -397,6 +465,60 @@
     particleCount: 'medium'
   };
 
+  // Game modes and progression
+  let gameMode = 'classic'; // 'classic', 'survival', 'timeAttack', 'bossRush'
+  let currentLevel = 1;
+  let gameTime = 0;
+  let achievements = [];
+  let unlockedCharacters = ['basic'];
+  let selectedCharacter = 'basic';
+  
+  // Character definitions
+  const characterTypes = {
+    basic: {
+      name: 'Basic Cell',
+      color: '#4CAF50',
+      speed: 3,
+      size: 20,
+      ability: 'none',
+      unlockRequirement: 'default'
+    },
+    speedy: {
+      name: 'Speed Demon',
+      color: '#00FFFF',
+      speed: 5,
+      size: 18,
+      ability: 'speed',
+      unlockRequirement: 'score_1000'
+    },
+    tank: {
+      name: 'Heavy Tank',
+      color: '#FFD700',
+      speed: 2,
+      size: 25,
+      ability: 'armor',
+      unlockRequirement: 'survive_5min'
+    },
+    hunter: {
+      name: 'Hunter',
+      color: '#FF4500',
+      speed: 4,
+      size: 20,
+      ability: 'tracking',
+      unlockRequirement: 'eat_100_enemies'
+    }
+  };
+
+  // Achievement definitions
+  const achievementList = [
+    { id: 'first_score', name: 'First Points', description: 'Score your first points', requirement: 'score_1', unlocked: false },
+    { id: 'survivor', name: 'Survivor', description: 'Survive for 5 minutes', requirement: 'time_300', unlocked: false },
+    { id: 'high_scorer', name: 'High Scorer', description: 'Score 1000 points', requirement: 'score_1000', unlocked: false },
+    { id: 'giant_slayer', name: 'Giant Slayer', description: 'Defeat a boss enemy', requirement: 'kill_boss', unlocked: false },
+    { id: 'collector', name: 'Power Collector', description: 'Collect 50 power-ups', requirement: 'powerups_50', unlocked: false },
+    { id: 'speed_demon', name: 'Speed Demon', description: 'Unlock the Speed character', requirement: 'unlock_speedy', unlocked: false }
+  ];
+
   // Load settings from localStorage
   function loadSettings() {
     const saved = localStorage.getItem('flyOrDieSettings');
@@ -404,10 +526,111 @@
       gameSettings = { ...gameSettings, ...JSON.parse(saved) };
       updateSettingsUI();
     }
+    
+    // Load achievements
+    const savedAchievements = localStorage.getItem('flyOrDieAchievements');
+    if (savedAchievements) {
+      achievements = JSON.parse(savedAchievements);
+    } else {
+      achievements = [...achievementList];
+    }
+    
+    // Load unlocked characters
+    const savedCharacters = localStorage.getItem('flyOrDieCharacters');
+    if (savedCharacters) {
+      unlockedCharacters = JSON.parse(savedCharacters);
+    }
   }
 
   function saveSettings() {
     localStorage.setItem('flyOrDieSettings', JSON.stringify(gameSettings));
+    localStorage.setItem('flyOrDieAchievements', JSON.stringify(achievements));
+    localStorage.setItem('flyOrDieCharacters', JSON.stringify(unlockedCharacters));
+  }
+
+  function checkAchievements() {
+    achievements.forEach(achievement => {
+      if (achievement.unlocked) return;
+      
+      let unlocked = false;
+      
+      switch (achievement.requirement) {
+        case 'score_1':
+          unlocked = player.score >= 1;
+          break;
+        case 'score_1000':
+          unlocked = player.score >= 1000;
+          break;
+        case 'time_300':
+          unlocked = gameTime >= 300 * 60; // 5 minutes at 60fps
+          break;
+        case 'powerups_50':
+          unlocked = player.powerupsCollected >= 50;
+          break;
+        case 'kill_boss':
+          unlocked = player.bossesKilled >= 1;
+          break;
+        case 'unlock_speedy':
+          unlocked = unlockedCharacters.includes('speedy');
+          break;
+      }
+      
+      if (unlocked) {
+        achievement.unlocked = true;
+        showAchievement(achievement);
+        
+        // Unlock characters based on achievements
+        if (achievement.id === 'high_scorer' && !unlockedCharacters.includes('speedy')) {
+          unlockedCharacters.push('speedy');
+        }
+        if (achievement.id === 'survivor' && !unlockedCharacters.includes('tank')) {
+          unlockedCharacters.push('tank');
+        }
+      }
+    });
+  }
+
+  function showAchievement(achievement) {
+    // Create achievement notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: rgba(255, 215, 0, 0.9);
+      color: #000;
+      padding: 15px;
+      border-radius: 10px;
+      border: 2px solid #FFD700;
+      z-index: 50;
+      font-weight: bold;
+      max-width: 250px;
+      animation: slideIn 0.5s ease-out;
+    `;
+    notification.innerHTML = `
+      <div style="font-size: 14px;">🏆 Achievement Unlocked!</div>
+      <div style="font-size: 16px; margin: 5px 0;">${achievement.name}</div>
+      <div style="font-size: 12px;">${achievement.description}</div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Add CSS animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Remove after 4 seconds
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 4000);
+    
+    playSound(800, 0.3, 'square', 0.4);
   }
 
   function updateSettingsUI() {
@@ -415,6 +638,51 @@
     document.getElementById('musicVolume').value = gameSettings.musicVolume;
     document.getElementById('showFPS').checked = gameSettings.showFPS;
     document.getElementById('particleCount').value = gameSettings.particleCount;
+  }
+
+  function renderCharacterSelection() {
+    const characterList = document.getElementById('characterList');
+    characterList.innerHTML = '';
+    
+    Object.keys(characterTypes).forEach(charKey => {
+      const char = characterTypes[charKey];
+      const isUnlocked = unlockedCharacters.includes(charKey);
+      const isSelected = selectedCharacter === charKey;
+      
+      const div = document.createElement('div');
+      div.className = `character-option ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+      div.innerHTML = `
+        <div style="font-weight: bold; color: ${char.color};">${char.name}</div>
+        <div style="font-size: 12px; margin-top: 5px;">
+          Speed: ${char.speed} | Size: ${char.size} | Ability: ${char.ability}
+        </div>
+        ${!isUnlocked ? '<div style="color: #f00; font-size: 10px;">LOCKED</div>' : ''}
+      `;
+      
+      if (isUnlocked) {
+        div.addEventListener('click', () => {
+          selectedCharacter = charKey;
+          renderCharacterSelection();
+        });
+      }
+      
+      characterList.appendChild(div);
+    });
+  }
+
+  function renderAchievements() {
+    const achievementsList = document.getElementById('achievementsList');
+    achievementsList.innerHTML = '';
+    
+    achievements.forEach(achievement => {
+      const div = document.createElement('div');
+      div.className = `achievement-item ${achievement.unlocked ? 'unlocked' : 'locked'}`;
+      div.innerHTML = `
+        <div style="font-weight: bold;">${achievement.unlocked ? '🏆' : '🔒'} ${achievement.name}</div>
+        <div style="font-size: 12px; margin-top: 5px;">${achievement.description}</div>
+      `;
+      achievementsList.appendChild(div);
+    });
   }
 
   // Audio context and sounds
@@ -524,56 +792,125 @@
 
   // Player class
   class Player extends Entity {
-    constructor(x, y) {
-      super(x, y, 20, '#4CAF50');
-      this.speed = 3;
+    constructor(x, y, characterType = 'basic') {
+      const char = characterTypes[characterType];
+      super(x, y, char.size, char.color);
+      this.speed = char.speed;
+      this.baseSpeed = char.speed;
+      this.characterType = characterType;
+      this.ability = char.ability;
       this.vx = 0;
       this.vy = 0;
       this.score = 0;
       this.lives = 10;
       this.powerup = null;
       this.powerupTimer = 0;
+      this.powerupsCollected = 0;
+      this.enemiesEaten = 0;
+      this.bossesKilled = 0;
+      this.invulnerable = false;
+      this.invulnerableTimer = 0;
     }
+    
     update() {
       this.x += this.vx;
       this.y += this.vy;
+      
       // Keep player inside canvas
       this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
       this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+      
       // Powerup timer decrement
       if (this.powerupTimer > 0) {
         this.powerupTimer--;
         if (this.powerupTimer === 0) {
           this.powerup = null;
           powerupIndicator.textContent = '';
-          this.speed = 3;
-          this.color = '#4CAF50';
+          this.speed = this.baseSpeed;
+          if (this.ability !== 'speed') {
+            this.color = characterTypes[this.characterType].color;
+          }
         }
       }
+      
+      // Invulnerability timer
+      if (this.invulnerableTimer > 0) {
+        this.invulnerableTimer--;
+        this.invulnerable = this.invulnerableTimer > 0;
+      }
     }
+    
+    draw(ctx) {
+      ctx.save();
+      
+      // Flashing effect when invulnerable
+      if (this.invulnerable && Math.floor(frameCount / 10) % 2) {
+        ctx.globalAlpha = 0.5;
+      }
+      
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 15;
+      ctx.fill();
+      
+      // Draw character ability indicator
+      if (this.ability === 'armor') {
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (this.ability === 'tracking') {
+        // Draw crosshair
+        ctx.strokeStyle = '#FF4500';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.x - this.radius/2, this.y);
+        ctx.lineTo(this.x + this.radius/2, this.y);
+        ctx.moveTo(this.x, this.y - this.radius/2);
+        ctx.lineTo(this.x, this.y + this.radius/2);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+    
     grow(amount) {
       this.radius += amount;
       this.score += Math.floor(amount * 10);
       scoreDisplay.textContent = 'Score: ' + this.score;
     }
+    
     loseLife() {
+      if (this.invulnerable) return;
+      
       this.lives--;
       livesDisplay.textContent = 'Lives: ' + this.lives;
+      this.invulnerable = true;
+      this.invulnerableTimer = 120; // 2 seconds at 60fps
+      
       playSound(150, 0.2, 'triangle', 0.3);
+      
       if (this.lives <= 0) {
         gameOver();
       }
     }
+    
     applyPowerup(type) {
       this.powerup = type;
       this.powerupTimer = 600; // 10 seconds at 60fps
+      this.powerupsCollected++;
       powerupIndicator.textContent = 'Power-up: ' + type;
+      
       if (type === 'speed') {
-        this.speed = 6;
+        this.speed = this.baseSpeed * 2;
         this.color = '#00FFFF';
       } else if (type === 'shield') {
         this.color = '#FFD700';
+      } else if (type === 'magnetism') {
+        this.color = '#FF69B4';
       }
+      
       playSound(600, 0.3, 'square', 0.4);
     }
   }
@@ -588,7 +925,7 @@
   // Powerup class
   class Powerup extends Entity {
     constructor(x, y, type) {
-      super(x, y, 10, type === 'speed' ? '#00FFFF' : '#FFD700');
+      super(x, y, 10, type === 'speed' ? '#00FFFF' : type === 'shield' ? '#FFD700' : '#FF69B4');
       this.type = type;
       this.angle = 0;
     }
@@ -600,15 +937,166 @@
       ctx.fillStyle = this.color;
       ctx.shadowColor = this.color;
       ctx.shadowBlur = 15;
-      ctx.moveTo(0, -this.radius);
-      for (let i = 0; i < 5; i++) {
-        ctx.lineTo(this.radius * Math.cos((i * 2 * Math.PI) / 5), this.radius * Math.sin((i * 2 * Math.PI) / 5));
-        ctx.lineTo(this.radius / 2 * Math.cos(((i * 2 + 1) * Math.PI) / 5), this.radius / 2 * Math.sin(((i * 2 + 1) * Math.PI) / 5));
+      
+      if (this.type === 'magnetism') {
+        // Draw diamond shape for magnetism
+        ctx.moveTo(0, -this.radius);
+        ctx.lineTo(this.radius, 0);
+        ctx.lineTo(0, this.radius);
+        ctx.lineTo(-this.radius, 0);
+      } else {
+        // Draw star shape for other powerups
+        ctx.moveTo(0, -this.radius);
+        for (let i = 0; i < 5; i++) {
+          ctx.lineTo(this.radius * Math.cos((i * 2 * Math.PI) / 5), this.radius * Math.sin((i * 2 * Math.PI) / 5));
+          ctx.lineTo(this.radius / 2 * Math.cos(((i * 2 + 1) * Math.PI) / 5), this.radius / 2 * Math.sin(((i * 2 + 1) * Math.PI) / 5));
+        }
       }
+      
       ctx.closePath();
       ctx.fill();
       ctx.restore();
       this.angle += 0.05;
+    }
+  }
+
+  // Boss Enemy class
+  class BossEnemy extends Entity {
+    constructor(x, y) {
+      super(x, y, 60, '#8B0000');
+      this.speed = 1.5;
+      this.vx = 0;
+      this.vy = 0;
+      this.health = 10;
+      this.maxHealth = 10;
+      this.shootTimer = 0;
+      this.moveTimer = 0;
+      this.phase = 1;
+      this.isShaking = false;
+      this.shakeTimer = 0;
+    }
+    
+    update(player) {
+      // Boss AI phases
+      if (this.health <= this.maxHealth / 2 && this.phase === 1) {
+        this.phase = 2;
+        this.speed = 2;
+        this.color = '#FF0000';
+      }
+      
+      this.moveTimer--;
+      if (this.moveTimer <= 0) {
+        // Move towards player
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          this.vx = (dx / dist) * this.speed;
+          this.vy = (dy / dist) * this.speed;
+        }
+        this.moveTimer = 120 + Math.floor(Math.random() * 60);
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      // Keep boss inside canvas
+      this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+      this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+      
+      // Boss shooting pattern
+      this.shootTimer--;
+      if (this.shootTimer <= 0) {
+        this.shootProjectiles(player);
+        this.shootTimer = this.phase === 1 ? 180 : 120;
+      }
+      
+      // Shake effect when damaged
+      if (this.shakeTimer > 0) {
+        this.shakeTimer--;
+        this.isShaking = this.shakeTimer > 0;
+      }
+    }
+    
+    shootProjectiles(player) {
+      const projectileCount = this.phase === 1 ? 3 : 6;
+      const speed = 3;
+      
+      for (let i = 0; i < projectileCount; i++) {
+        const angle = (Math.PI * 2 * i) / projectileCount;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        projectiles.push(new Projectile(this.x, this.y, vx, vy));
+      }
+      
+      playSound(1200, 0.15, 'sawtooth', 0.3);
+    }
+    
+    takeDamage() {
+      this.health--;
+      this.isShaking = true;
+      this.shakeTimer = 30;
+      playSound(300, 0.2, 'triangle', 0.4);
+      
+      if (this.health <= 0) {
+        return true; // Boss defeated
+      }
+      return false;
+    }
+    
+    draw(ctx) {
+      ctx.save();
+      
+      // Shake effect
+      if (this.isShaking) {
+        ctx.translate(Math.random() * 4 - 2, Math.random() * 4 - 2);
+      }
+      
+      // Draw boss body
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 20;
+      ctx.fill();
+      
+      // Draw spikes around boss
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 4;
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 * i) / 8;
+        const innerRadius = this.radius;
+        const outerRadius = this.radius + 15;
+        ctx.beginPath();
+        ctx.moveTo(
+          this.x + Math.cos(angle) * innerRadius,
+          this.y + Math.sin(angle) * innerRadius
+        );
+        ctx.lineTo(
+          this.x + Math.cos(angle) * outerRadius,
+          this.y + Math.sin(angle) * outerRadius
+        );
+        ctx.stroke();
+      }
+      
+      // Draw health bar
+      const barWidth = 100;
+      const barHeight = 8;
+      const barX = this.x - barWidth / 2;
+      const barY = this.y - this.radius - 30;
+      
+      ctx.fillStyle = '#FF0000';
+      ctx.fillRect(barX, barY, barWidth, barHeight);
+      
+      ctx.fillStyle = '#00FF00';
+      const healthPercent = this.health / this.maxHealth;
+      ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+      
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(barX, barY, barWidth, barHeight);
+      
+      ctx.restore();
     }
   }
 
@@ -721,6 +1209,7 @@
   let player;
   let foods = [];
   let enemies = [];
+  let bosses = [];
   let powerups = [];
   let particles = [];
   let projectiles = [];
@@ -728,6 +1217,7 @@
   let gameRunning = false;
   let gamePaused = false;
   let frameCount = 0;
+  let nextBossSpawn = 1800; // 30 seconds at 60fps
   let fpsCounter = new FPSCounter();
 
   // Touch controls state
@@ -775,8 +1265,16 @@
   function spawnPowerup() {
     const x = Math.random() * (canvas.width - 20) + 10;
     const y = Math.random() * (canvas.height - 20) + 10;
-    const type = Math.random() < 0.5 ? 'speed' : 'shield';
+    const types = ['speed', 'shield', 'magnetism'];
+    const type = types[Math.floor(Math.random() * types.length)];
     powerups.push(new Powerup(x, y, type));
+  }
+  
+  function spawnBoss() {
+    const x = Math.random() * (canvas.width - 120) + 60;
+    const y = Math.random() * (canvas.height - 120) + 60;
+    bosses.push(new BossEnemy(x, y));
+    playSound(200, 1, 'sawtooth', 0.5);
   }
   function spawnEnemy() {
     const radius = 15 + Math.random() * 20;
@@ -805,9 +1303,10 @@
 
   // Reset game state
   function resetGame() {
-    player = new Player(canvas.width / 2, canvas.height / 2);
+    player = new Player(canvas.width / 2, canvas.height / 2, selectedCharacter);
     foods = [];
     enemies = [];
+    bosses = [];
     powerups = [];
     particles = [];
     projectiles = [];
@@ -816,6 +1315,9 @@
     gameRunning = true;
     gamePaused = false;
     frameCount = 0;
+    gameTime = 0;
+    nextBossSpawn = 1800;
+    currentLevel = 1;
     scoreDisplay.textContent = 'Score: 0';
     livesDisplay.textContent = 'Lives: 10';
     powerupIndicator.textContent = '';
@@ -832,6 +1334,8 @@
     startScreen.classList.add('hidden');
     pauseMenu.classList.add('hidden');
     settingsMenu.classList.add('hidden');
+    document.getElementById('characterScreen').classList.add('hidden');
+    document.getElementById('achievementsScreen').classList.add('hidden');
   }
 
   function showMainMenu() {
@@ -857,7 +1361,18 @@
     if (!gameRunning || gamePaused) return;
 
     frameCount++;
+    gameTime++;
     fpsCounter.update();
+
+    // Level progression and boss spawning
+    const newLevel = Math.floor(frameCount / 1800) + 1; // New level every 30 seconds
+    if (newLevel > currentLevel) {
+      currentLevel = newLevel;
+      // Increase difficulty
+      if (currentLevel % 3 === 0 && bosses.length === 0) {
+        spawnBoss();
+      }
+    }
 
     // Increase difficulty over time
     if (frameCount % 600 === 0) { // every 10 seconds at 60fps
@@ -886,6 +1401,25 @@
       }
       enemy.update(player);
     });
+
+    // Update bosses
+    bosses.forEach(boss => {
+      boss.update(player);
+    });
+
+    // Magnetism powerup effect
+    if (player.powerup === 'magnetism') {
+      foods.forEach(food => {
+        const dx = player.x - food.x;
+        const dy = player.y - food.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 100) { // Magnetism range
+          const pullStrength = 0.2;
+          food.x += (dx / dist) * pullStrength * (100 - dist) / 100;
+          food.y += (dy / dist) * pullStrength * (100 - dist) / 100;
+        }
+      });
+    }
 
     // Update projectiles
     for (let i = projectiles.length - 1; i >= 0; i--) {
@@ -935,6 +1469,7 @@
           // Shield powerup: eat enemy regardless of size
           player.grow(enemy.radius * 0.7);
           player.score += Math.floor(enemy.radius * 10);
+          player.enemiesEaten++;
           spawnParticles(enemy.x, enemy.y, enemy.color);
           enemies.splice(i, 1);
           spawnEnemy();
@@ -943,6 +1478,7 @@
           // Player eats enemy
           player.grow(enemy.radius * 0.7);
           player.score += Math.floor(enemy.radius * 10);
+          player.enemiesEaten++;
           spawnParticles(enemy.x, enemy.y, enemy.color);
           enemies.splice(i, 1);
           spawnEnemy();
@@ -963,6 +1499,32 @@
       }
     }
 
+    // Check collisions with bosses
+    for (let i = bosses.length - 1; i >= 0; i--) {
+      const boss = bosses[i];
+      if (player.collidesWith(boss)) {
+        if (player.powerup === 'shield' || player.radius > boss.radius) {
+          // Player can damage boss
+          if (boss.takeDamage()) {
+            // Boss defeated
+            player.score += 500;
+            player.bossesKilled++;
+            spawnParticles(boss.x, boss.y, boss.color);
+            bosses.splice(i, 1);
+            playSound(800, 0.5, 'triangle', 0.5);
+            
+            // Spawn rewards
+            for (let j = 0; j < 3; j++) {
+              spawnPowerup();
+            }
+          }
+        } else {
+          // Player takes damage
+          player.loseLife();
+        }
+      }
+    }
+
     // Update particles
     for (let i = particles.length - 1; i >= 0; i--) {
       particles[i].update();
@@ -970,6 +1532,9 @@
         particles.splice(i, 1);
       }
     }
+
+    // Check achievements
+    checkAchievements();
   }
 
   // Draw game state
@@ -986,6 +1551,9 @@
 
     // Draw enemies
     enemies.forEach(enemy => enemy.draw(ctx));
+
+    // Draw bosses
+    bosses.forEach(boss => boss.draw(ctx));
 
     // Draw projectiles
     projectiles.forEach(proj => {
@@ -1007,6 +1575,13 @@
     // Draw player
     player.draw(ctx);
 
+    // Draw level indicator
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Level: ${currentLevel}`, canvas.width - 120, 30);
+    ctx.restore();
+
     // Draw FPS counter
     fpsCounter.draw(ctx);
   }
@@ -1027,6 +1602,7 @@
     finalScoreDisplay.textContent = 'Your final score: ' + player.score;
     updateLeaderboard(player.score);
     renderLeaderboard(loadLeaderboard());
+    saveSettings(); // Save achievements and unlocked characters
     hideAllMenus();
     gameOverScreen.classList.remove('hidden');
   }
@@ -1103,6 +1679,30 @@
   settingsBtn.addEventListener('click', () => {
     hideAllMenus();
     settingsMenu.classList.remove('hidden');
+  });
+
+  document.getElementById('characterBtn').addEventListener('click', () => {
+    hideAllMenus();
+    document.getElementById('characterScreen').classList.remove('hidden');
+    renderCharacterSelection();
+  });
+
+  document.getElementById('achievementsBtn').addEventListener('click', () => {
+    hideAllMenus();
+    document.getElementById('achievementsScreen').classList.remove('hidden');
+    renderAchievements();
+  });
+
+  document.getElementById('selectCharacterBtn').addEventListener('click', () => {
+    showMainMenu();
+  });
+
+  document.getElementById('backToMenuBtn').addEventListener('click', () => {
+    showMainMenu();
+  });
+
+  document.getElementById('backFromAchievementsBtn').addEventListener('click', () => {
+    showMainMenu();
   });
 
   restartBtn.addEventListener('click', () => {
