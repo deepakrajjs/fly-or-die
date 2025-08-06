@@ -1,721 +1,498 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Fly or Die - Ultimate Edition (Hard Mode)</title>
-<style>
-  /* Reset and base styles */
-  * {
-    box-sizing: border-box;
-  }
-  body, html {
-    margin: 0; padding: 0; height: 100%;
-    background: radial-gradient(circle at center, #121212 0%, #000 100%);
-    color: #eee;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    overflow: hidden;
-    user-select: none;
-  }
-  #gameContainer {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-  }
-  canvas {
-    display: block;
-    margin: 0 auto;
-    background: radial-gradient(circle at center, #220000 0%, #110000 90%);
-    border: 3px solid #f00;
-    box-shadow: 0 0 20px #f00;
-    max-width: 100%;
-    height: 100vh;
-  }
-  #ui {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90vw;
-    max-width: 900px;
-    display: flex;
-    justify-content: space-between;
-    color: #f00;
-    font-weight: bold;
-    font-size: 20px;
-    text-shadow: 0 0 5px #f00;
-    pointer-events: none;
-    user-select: none;
-    z-index: 10;
-  }
-  #startScreen, #gameOverScreen {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(30,0,0,0.9);
-    border: 2px solid #f00;
-    border-radius: 12px;
-    padding: 30px 40px;
-    max-width: 400px;
-    box-shadow: 0 0 20px #f00;
-    text-align: center;
-    z-index: 20;
-    user-select: text;
-  }
-  #startScreen h1, #gameOverScreen h1 {
-    margin: 0 0 20px 0;
-    font-size: 36px;
-    color: #f00;
-    text-shadow: 0 0 15px #f00;
-  }
-  #startScreen p, #gameOverScreen p {
-    font-size: 16px;
-    margin: 10px 0;
-    line-height: 1.4;
-  }
-  button {
-    background-color: #f00;
-    border: none;
-    padding: 14px 30px;
-    font-size: 20px;
-    font-weight: bold;
-    color: #000;
-    border-radius: 10px;
-    cursor: pointer;
-    box-shadow: 0 0 15px #f00;
-    transition: background-color 0.3s ease;
-    user-select: none;
-  }
-  button:hover {
-    background-color: #c00;
-  }
-  .hidden {
-    display: none;
-  }
-  #leaderboard {
-    margin-top: 15px;
-    text-align: left;
-    font-size: 14px;
-    max-height: 150px;
-    overflow-y: auto;
-    color: #f00;
-    border-top: 1px solid #f00;
-    padding-top: 10px;
-  }
-  #leaderboard h3 {
-    margin: 0 0 10px 0;
-    font-weight: bold;
-  }
-  #leaderboard ol {
-    padding-left: 20px;
-    margin: 0;
-  }
-  #leaderboard li {
-    margin-bottom: 5px;
-  }
-  #powerupIndicator {
-    font-size: 16px;
-    color: #ff0;
-    text-shadow: 0 0 5px #ff0;
-    pointer-events: none;
-    user-select: none;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Fly or Die - Arcade Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Fly or Die - Modern Arcade Game">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Orbitron:700,400|Roboto:400,700">
+  <style>
+    :root {
+      --main-bg: #222831;
+      --accent: #00adb5;
+      --danger: #ff2e63;
+      --good: #eaffd0;
+      --score: #ffd700;
+    }
+    body {
+      margin: 0;
+      background: var(--main-bg);
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    canvas {
+      border-radius: 16px;
+      box-shadow: 0 4px 32px #000a;
+      background: #393e46;
+      width: 100vw;
+      height: 100vh;
+      max-width: 480px;
+      max-height: 720px;
+      touch-action: none;
+    }
+    #ui-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #main-menu, #level-complete, #game-over, #leaderboard {
+      background: #393e46ee;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px #0007;
+      padding: 32px 24px;
+      margin-top: 64px;
+      pointer-events: auto;
+      text-align: center;
+      min-width: 250px;
+      display: none;
+    }
+    .visible { display: block !important; }
+    h1 {
+      font-family: 'Orbitron', Arial, sans-serif;
+      color: var(--accent);
+      font-size: 2.2rem;
+      margin-bottom: 0.5em;
+      text-shadow: 0 2px 8px #0009;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.2em;
+      padding: 10px 26px;
+      margin: 8px 0;
+      font-family: 'Orbitron', Arial, sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+      pointer-events: auto;
+    }
+    .btn:hover { background: var(--danger);}
+    #scoreboard, #level-indicator, #mute-btn {
+      position: absolute;
+      font-size: 1.1em;
+      background: #222831cc;
+      border-radius: 8px;
+      padding: 6px 14px;
+      left: 14px;
+      top: 14px;
+      z-index: 2;
+      color: var(--score);
+      pointer-events: auto;
+      box-shadow: 0 2px 10px #0002;
+    }
+    #level-indicator { left: unset; right: 14px; color: var(--accent);}
+    #mute-btn {
+      left: unset; right: 14px; top: 54px;
+      background: #00adb522;
+      color: #fff; font-size: 1.3em; border: none; cursor: pointer;
+      padding: 6px 10px; z-index: 3;
+    }
+    @media (max-width: 600px) {
+      canvas { max-width: 100vw; max-height: 80vh;}
+      #main-menu, #level-complete, #game-over, #leaderboard { margin-top: 20px;}
+    }
+  </style>
 </head>
 <body>
-<div id="gameContainer">
-  <canvas id="gameCanvas" width="900" height="600"></canvas>
-  <div id="ui">
-    <div id="score">Score: 0</div>
-    <div id="lives">Lives: 10</div>
-    <div id="powerupIndicator"></div>
-  </div>
-
-  <div id="startScreen">
-    <h1>Fly or Die - Ultimate Edition (Hard Mode)</h1>
-    <p>Control your creature with arrow keys or WASD.</p>
-    <p>Eat food and smaller enemies to grow and score points.</p>
-    <p>Avoid enemies bigger than you or lose a life.</p>
-    <p>You have 10 lives. Survive and score as much as possible!</p>
-    <p>Collect power-ups for temporary boosts.</p>
-    <p>Difficulty increases over time with more and faster enemies!</p>
-    <button id="startBtn">Start Game</button>
-  </div>
-
-  <div id="gameOverScreen" class="hidden">
-    <h1>Game Over</h1>
-    <p id="finalScore"></p>
-    <div id="leaderboard">
-      <h3>Leaderboard</h3>
-      <ol id="leaderboardList"></ol>
+  <div id="game-container">
+    <canvas id="game-canvas" width="480" height="720"></canvas>
+    <div id="ui-overlay">
+      <div id="main-menu" class="visible">
+        <h1>Fly or Die</h1>
+        <p>Arcade Challenge - Tap or click to fly!</p>
+        <button class="btn" id="start-btn">Start Game</button>
+        <button class="btn" id="show-lb-btn">Leaderboard</button>
+        <p style="margin-top:1em; font-size:.95em;">v1.0 | &copy; 2025 deepakrajjs</p>
+      </div>
+      <div id="level-complete">
+        <h1>Level Complete!</h1>
+        <p id="next-level-info"></p>
+        <button class="btn" id="next-level-btn">Next Level</button>
+      </div>
+      <div id="game-over">
+        <h1>Game Over</h1>
+        <p id="final-score"></p>
+        <button class="btn" id="restart-btn">Restart</button>
+        <button class="btn" id="show-lb-btn-over">Leaderboard</button>
+      </div>
+      <div id="leaderboard">
+        <h1>Leaderboard</h1>
+        <ol id="lb-list"></ol>
+        <button class="btn" id="close-lb-btn">Back</button>
+      </div>
     </div>
-    <button id="restartBtn">Play Again</button>
+    <div id="scoreboard">Score: 0</div>
+    <div id="level-indicator">Level: 1</div>
+    <button id="mute-btn" title="Mute/Unmute Sound">🔊</button>
   </div>
-</div>
+  <script>
+    // --- Game Variables ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width, height = canvas.height;
+    let devicePixelRatio = window.devicePixelRatio || 1;
 
-<script>
-  // Audio context and sounds
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const audioCtx = new AudioContext();
+    // UI Elements
+    const mainMenu = document.getElementById('main-menu');
+    const startBtn = document.getElementById('start-btn');
+    const nextLevelDiv = document.getElementById('level-complete');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+    const nextLevelInfo = document.getElementById('next-level-info');
+    const gameOverDiv = document.getElementById('game-over');
+    const finalScoreEl = document.getElementById('final-score');
+    const restartBtn = document.getElementById('restart-btn');
+    const scoreboard = document.getElementById('scoreboard');
+    const levelIndicator = document.getElementById('level-indicator');
+    const muteBtn = document.getElementById('mute-btn');
+    const lbDiv = document.getElementById('leaderboard');
+    const lbList = document.getElementById('lb-list');
+    const showLbBtn = document.getElementById('show-lb-btn');
+    const showLbBtnOver = document.getElementById('show-lb-btn-over');
+    const closeLbBtn = document.getElementById('close-lb-btn');
 
-  function playSound(freq, duration, type = 'sine', volume = 0.1) {
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + duration);
-  }
+    // Game State
+    let running = false, gameOver = false, paused = false, level = 1, score = 0, highScores = [];
+    let mute = false, requestId = null;
 
-  // Particle system for effects
-  class Particle {
-    constructor(x, y, color) {
-      this.x = x;
-      this.y = y;
-      this.radius = Math.random() * 3 + 2;
-      this.color = color;
-      this.vx = (Math.random() - 0.5) * 4;
-      this.vy = (Math.random() - 0.5) * 4;
-      this.alpha = 1;
-      this.life = 30 + Math.random() * 20;
+    // --- Sound Effects ---
+    const SFX = {
+      flap: new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_12c6b4ba6e.mp3'),
+      die: new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_12c6b4ba6e.mp3'),
+      score: new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_12c6b4ba6e.mp3'),
+      levelUp: new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_12c6b4ba6e.mp3'),
+      powerup: new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_12c6b4ba6e.mp3'),
+    };
+    function playSFX(name) {
+      if (!mute && SFX[name]) { SFX[name].currentTime = 0; SFX[name].play(); }
     }
-    update() {
-      this.x += this.vx;
-      this.y += this.vy;
-      this.alpha -= 1 / this.life;
-      this.radius *= 0.95;
-    }
-    draw(ctx) {
-      ctx.save();
-      ctx.globalAlpha = this.alpha;
-      ctx.beginPath();
-      ctx.fillStyle = this.color;
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur = 10;
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
 
-  // Entity base class
-  class Entity {
-    constructor(x, y, radius, color) {
-      this.x = x;
-      this.y = y;
-      this.radius = radius;
-      this.color = color;
-    }
-    draw(ctx) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fillStyle = this.color;
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur = 15;
-      ctx.fill();
-      ctx.restore();
-    }
-    distanceTo(other) {
-      const dx = this.x - other.x;
-      const dy = this.y - other.y;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-    collidesWith(other) {
-      return this.distanceTo(other) < this.radius + other.radius;
-    }
-  }
+    muteBtn.onclick = () => {
+      mute = !mute;
+      muteBtn.textContent = mute ? '🔇' : '🔊';
+    };
 
-  // Player class
-  class Player extends Entity {
-    constructor(x, y) {
-      super(x, y, 20, '#4CAF50');
-      this.speed = 3;
-      this.vx = 0;
-      this.vy = 0;
-      this.score = 0;
-      this.lives = 10;
-      this.powerup = null;
-      this.powerupTimer = 0;
+    // --- Responsive Canvas ---
+    function resizeCanvas() {
+      let w = Math.min(window.innerWidth, 480);
+      let h = Math.min(window.innerHeight, 720);
+      devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = w * devicePixelRatio;
+      canvas.height = h * devicePixelRatio;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      width = canvas.width;
+      height = canvas.height;
     }
-    update() {
-      this.x += this.vx;
-      this.y += this.vy;
-      // Keep player inside canvas
-      this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-      this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-      // Powerup timer decrement
-      if (this.powerupTimer > 0) {
-        this.powerupTimer--;
-        if (this.powerupTimer === 0) {
-          this.powerup = null;
-          powerupIndicator.textContent = '';
-          this.speed = 3;
-          this.color = '#4CAF50';
-        }
-      }
-    }
-    grow(amount) {
-      this.radius += amount;
-      this.score += Math.floor(amount * 10);
-      scoreDisplay.textContent = 'Score: ' + this.score;
-    }
-    loseLife() {
-      this.lives--;
-      livesDisplay.textContent = 'Lives: ' + this.lives;
-      playSound(150, 0.2, 'triangle', 0.3);
-      if (this.lives <= 0) {
-        gameOver();
-      }
-    }
-    applyPowerup(type) {
-      this.powerup = type;
-      this.powerupTimer = 600; // 10 seconds at 60fps
-      powerupIndicator.textContent = 'Power-up: ' + type;
-      if (type === 'speed') {
-        this.speed = 6;
-        this.color = '#00FFFF';
-      } else if (type === 'shield') {
-        this.color = '#FFD700';
-      }
-      playSound(600, 0.3, 'square', 0.4);
-    }
-  }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-  // Food class
-  class Food extends Entity {
-    constructor(x, y) {
-      super(x, y, 8, '#FFEB3B');
+    // --- Leaderboard ---
+    function loadLeaderboard() {
+      try {
+        highScores = JSON.parse(localStorage.getItem('flyordie-lb') || '[]');
+      } catch { highScores = []; }
     }
-  }
+    function saveLeaderboard() {
+      localStorage.setItem('flyordie-lb', JSON.stringify(highScores));
+    }
+    function showLeaderboard() {
+      lbDiv.classList.add('visible');
+      mainMenu.classList.remove('visible');
+      gameOverDiv.classList.remove('visible');
+      lbList.innerHTML = '';
+      loadLeaderboard();
+      let html = '';
+      highScores.slice(0, 10).forEach(({score, level}, i) => {
+        html += `<li>#${i+1}: <b>${score}</b> pts - Level ${level}</li>`;
+      });
+      lbList.innerHTML = html || '<li>No scores yet. Play to set a record!</li>';
+    }
+    showLbBtn.onclick = showLeaderboard;
+    showLbBtnOver.onclick = showLeaderboard;
+    closeLbBtn.onclick = () => {
+      lbDiv.classList.remove('visible');
+      mainMenu.classList.add('visible');
+    };
 
-  // Powerup class
-  class Powerup extends Entity {
-    constructor(x, y, type) {
-      super(x, y, 10, type === 'speed' ? '#00FFFF' : '#FFD700');
-      this.type = type;
-      this.angle = 0;
-    }
-    draw(ctx) {
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.angle);
-      ctx.beginPath();
-      ctx.fillStyle = this.color;
-      ctx.shadowColor = this.color;
-      ctx.shadowBlur = 15;
-      ctx.moveTo(0, -this.radius);
-      for (let i = 0; i < 5; i++) {
-        ctx.lineTo(this.radius * Math.cos((i * 2 * Math.PI) / 5), this.radius * Math.sin((i * 2 * Math.PI) / 5));
-        ctx.lineTo(this.radius / 2 * Math.cos(((i * 2 + 1) * Math.PI) / 5), this.radius / 2 * Math.sin(((i * 2 + 1) * Math.PI) / 5));
-      }
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-      this.angle += 0.05;
-    }
-  }
-
-  // Enemy class with AI behaviors
-  class Enemy extends Entity {
-    constructor(x, y, radius, speed, color, behavior) {
-      super(x, y, radius, color);
-      this.speed = speed;
-      this.vx = (Math.random() * 2 - 1) * speed;
-      this.vy = (Math.random() * 2 - 1) * speed;
-      this.behavior = behavior; // 'wander', 'chase', 'flee'
-      this.changeDirTimer = 0;
-      this.shootTimer = Math.floor(Math.random() * 300) + 200; // For shooting behavior
-    }
-    update(player) {
-      if (this.behavior === 'chase') {
-        // Move toward player if smaller
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 0) {
-          this.vx = (dx / dist) * this.speed;
-          this.vy = (dy / dist) * this.speed;
-        }
-      } else if (this.behavior === 'flee') {
-        // Move away from player if bigger
-        const dx = this.x - player.x;
-        const dy = this.y - player.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 0) {
-          this.vx = (dx / dist) * this.speed;
-          this.vy = (dy / dist) * this.speed;
-        }
-      } else if (this.behavior === 'shoot') {
-        // Stay mostly still and shoot projectiles at player
-        this.vx = 0;
+    // --- Game Entities ---
+    class Player {
+      constructor() {
+        this.x = width / 5;
+        this.y = height / 2;
+        this.r = 20 * devicePixelRatio;
         this.vy = 0;
-        this.shootTimer--;
-        if (this.shootTimer <= 0) {
-          this.shootTimer = Math.floor(Math.random() * 300) + 200;
-          shootProjectile(this);
-        }
-      } else {
-        // Wander randomly, change direction occasionally
-        this.changeDirTimer--;
-        if (this.changeDirTimer <= 0) {
-          this.vx = (Math.random() * 2 - 1) * this.speed;
-          this.vy = (Math.random() * 2 - 1) * this.speed;
-          this.changeDirTimer = 60 + Math.floor(Math.random() * 120);
-        }
+        this.gravity = 0.6 * devicePixelRatio;
+        this.flap = -9 * devicePixelRatio;
+        this.color = '#00adb5';
+        this.alive = true;
+        this.powered = false;
+        this.powerTimer = 0;
       }
-      this.x += this.vx;
-      this.y += this.vy;
-      // Bounce off walls
-      if (this.x < this.radius) {
-        this.x = this.radius;
-        this.vx *= -1;
+      draw() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = this.alive ? (this.powered ? '#eaffd0' : this.color) : '#ff2e63';
+        ctx.shadowColor = this.powered ? '#eaffd0' : this.color;
+        ctx.shadowBlur = this.powered ? 24 : 10;
+        ctx.fill();
+        ctx.restore();
       }
-      if (this.x > canvas.width - this.radius) {
-        this.x = canvas.width - this.radius;
-        this.vx *= -1;
-      }
-      if (this.y < this.radius) {
-        this.y = this.radius;
-        this.vy *= -1;
-      }
-      if (this.y > canvas.height - this.radius) {
-        this.y = canvas.height - this.radius;
-        this.vy *= -1;
-      }
-    }
-  }
-
-  // Projectile class for enemy shooting
-  class Projectile extends Entity {
-    constructor(x, y, vx, vy) {
-      super(x, y, 5, '#FF4500');
-      this.vx = vx;
-      this.vy = vy;
-      this.life = 180; // frames
-    }
-    update() {
-      this.x += this.vx;
-      this.y += this.vy;
-      this.life--;
-    }
-  }
-
-  // Globals
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  const scoreDisplay = document.getElementById('score');
-  const livesDisplay = document.getElementById('lives');
-  const powerupIndicator = document.getElementById('powerupIndicator');
-  const startScreen = document.getElementById('startScreen');
-  const startBtn = document.getElementById('startBtn');
-  const gameOverScreen = document.getElementById('gameOverScreen');
-  const finalScoreDisplay = document.getElementById('finalScore');
-  const leaderboardList = document.getElementById('leaderboardList');
-  const restartBtn = document.getElementById('restartBtn');
-
-  let player;
-  let foods = [];
-  let enemies = [];
-  let powerups = [];
-  let particles = [];
-  let projectiles = [];
-  let keys = {};
-  let gameRunning = false;
-  let frameCount = 0;
-
-  // Leaderboard management
-  function loadLeaderboard() {
-    const data = localStorage.getItem('flyOrDieLeaderboard');
-    if (data) {
-      return JSON.parse(data);
-    }
-    return [];
-  }
-  function saveLeaderboard(scores) {
-    localStorage.setItem('flyOrDieLeaderboard', JSON.stringify(scores));
-  }
-  function updateLeaderboard(score) {
-    let scores = loadLeaderboard();
-    scores.push(score);
-    scores.sort((a,b) => b - a);
-    if (scores.length > 10) scores = scores.slice(0,10);
-    saveLeaderboard(scores);
-    renderLeaderboard(scores);
-  }
-  function renderLeaderboard(scores) {
-    leaderboardList.innerHTML = '';
-    scores.forEach((score, i) => {
-      const li = document.createElement('li');
-      li.textContent = `${i+1}. ${score}`;
-      leaderboardList.appendChild(li);
-    });
-  }
-
-  // Spawn functions
-  function spawnFood() {
-    const x = Math.random() * (canvas.width - 16) + 8;
-    const y = Math.random() * (canvas.height - 16) + 8;
-    foods.push(new Food(x, y));
-  }
-  function spawnPowerup() {
-    const x = Math.random() * (canvas.width - 20) + 10;
-    const y = Math.random() * (canvas.height - 20) + 10;
-    const type = Math.random() < 0.5 ? 'speed' : 'shield';
-    powerups.push(new Powerup(x, y, type));
-  }
-  function spawnEnemy() {
-    const radius = 15 + Math.random() * 20;
-    const speed = 1 + Math.random() * 2;
-    const x = Math.random() * (canvas.width - 2 * radius) + radius;
-    const y = Math.random() * (canvas.height - 2 * radius) + radius;
-    const color = ['#F44336', '#FF5722', '#E91E63', '#9C27B0'][Math.floor(Math.random() * 4)];
-    // Randomly assign behavior, with some chance for shooting enemies
-    let behavior = 'wander';
-    if (Math.random() < 0.3) behavior = 'shoot';
-    enemies.push(new Enemy(x, y, radius, speed, color, behavior));
-  }
-
-  // Shoot projectile from enemy towards player
-  function shootProjectile(enemy) {
-    const dx = player.x - enemy.x;
-    const dy = player.y - enemy.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist === 0) return;
-    const speed = 5;
-    const vx = (dx / dist) * speed;
-    const vy = (dy / dist) * speed;
-    projectiles.push(new Projectile(enemy.x, enemy.y, vx, vy));
-    playSound(1200, 0.1, 'square', 0.2);
-  }
-
-  // Reset game state
-  function resetGame() {
-    player = new Player(canvas.width / 2, canvas.height / 2);
-    foods = [];
-    enemies = [];
-    powerups = [];
-    particles = [];
-    projectiles = [];
-    keys = {};
-    gameRunning = true;
-    frameCount = 0;
-    scoreDisplay.textContent = 'Score: 0';
-    livesDisplay.textContent = 'Lives: 10';
-    powerupIndicator.textContent = '';
-    gameOverScreen.classList.add('hidden');
-    startScreen.classList.add('hidden');
-    // Spawn initial entities
-    for (let i = 0; i < 30; i++) spawnFood();
-    for (let i = 0; i < 10; i++) spawnEnemy();
-    for (let i = 0; i < 3; i++) spawnPowerup();
-  }
-
-  // Update game state
-  function update() {
-    if (!gameRunning) return;
-
-    frameCount++;
-
-    // Increase difficulty over time
-    if (frameCount % 600 === 0) { // every 10 seconds at 60fps
-      spawnEnemy();
-      if (frameCount % 1800 === 0 && powerups.length > 1) {
-        powerups.pop(); // reduce powerups over time
-      }
-    }
-
-    // Player movement
-    player.vx = 0;
-    player.vy = 0;
-    if (keys['ArrowUp'] || keys['w']) player.vy = -player.speed;
-    if (keys['ArrowDown'] || keys['s']) player.vy = player.speed;
-    if (keys['ArrowLeft'] || keys['a']) player.vx = -player.speed;
-    if (keys['ArrowRight'] || keys['d']) player.vx = player.speed;
-
-    player.update();
-
-    // Update enemies behavior based on player size
-    enemies.forEach(enemy => {
-      if (player.radius > enemy.radius) {
-        enemy.behavior = 'flee';
-      } else {
-        enemy.behavior = 'chase';
-      }
-      enemy.update(player);
-    });
-
-    // Update projectiles
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-      const proj = projectiles[i];
-      proj.update();
-      // Remove if out of bounds or life expired
-      if (proj.x < 0 || proj.x > canvas.width || proj.y < 0 || proj.y > canvas.height || proj.life <= 0) {
-        projectiles.splice(i, 1);
-        continue;
-      }
-      // Check collision with player
-      if (player.collidesWith(proj)) {
-        if (player.powerup !== 'shield') {
-          player.loseLife();
-          playSound(150, 0.3, 'triangle', 0.4);
-        }
-        projectiles.splice(i, 1);
-      }
-    }
-
-    // Check collisions with food
-    for (let i = foods.length - 1; i >= 0; i--) {
-      if (player.collidesWith(foods[i])) {
-        player.grow(0.5);
-        spawnParticles(foods[i].x, foods[i].y, foods[i].color);
-        foods.splice(i, 1);
-        spawnFood();
-        playSound(800, 0.1, 'square', 0.15);
-      }
-    }
-
-    // Check collisions with powerups
-    for (let i = powerups.length - 1; i >= 0; i--) {
-      if (player.collidesWith(powerups[i])) {
-        player.applyPowerup(powerups[i].type);
-        spawnParticles(powerups[i].x, powerups[i].y, powerups[i].color);
-        powerups.splice(i, 1);
-        spawnPowerup();
-      }
-    }
-
-    // Check collisions with enemies
-    for (let i = enemies.length - 1; i >= 0; i--) {
-      const enemy = enemies[i];
-      if (player.collidesWith(enemy)) {
-        if (player.powerup === 'shield') {
-          // Shield powerup: eat enemy regardless of size
-          player.grow(enemy.radius * 0.7);
-          player.score += Math.floor(enemy.radius * 10);
-          spawnParticles(enemy.x, enemy.y, enemy.color);
-          enemies.splice(i, 1);
-          spawnEnemy();
-          playSound(1000, 0.2, 'triangle', 0.3);
-        } else if (player.radius > enemy.radius) {
-          // Player eats enemy
-          player.grow(enemy.radius * 0.7);
-          player.score += Math.floor(enemy.radius * 10);
-          spawnParticles(enemy.x, enemy.y, enemy.color);
-          enemies.splice(i, 1);
-          spawnEnemy();
-          playSound(1000, 0.2, 'triangle', 0.3);
-        } else {
-          // Player loses a life
-          player.loseLife();
-          // Knockback player
-          const dx = player.x - enemy.x;
-          const dy = player.y - enemy.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist > 0) {
-            player.x += (dx / dist) * 30;
-            player.y += (dy / dist) * 30;
-          }
-          playSound(150, 0.3, 'triangle', 0.4);
+      update() {
+        if (!this.alive) return;
+        this.vy += this.gravity;
+        this.y += this.vy;
+        if (this.powered) {
+          this.powerTimer--;
+          if (this.powerTimer <= 0) this.powered = false;
         }
       }
-    }
-
-    // Update particles
-    for (let i = particles.length - 1; i >= 0; i--) {
-      particles[i].update();
-      if (particles[i].alpha <= 0) {
-        particles.splice(i, 1);
+      flapUp() {
+        if (!this.alive) return;
+        this.vy = this.flap;
+        playSFX('flap');
+      }
+      powerUp() {
+        this.powered = true;
+        this.powerTimer = 120; // 2s at 60fps
+        playSFX('powerup');
       }
     }
-  }
 
-  // Draw game state
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    class Obstacle {
+      constructor(gapY, gapH) {
+        this.x = width + 50 * devicePixelRatio;
+        this.w = 40 * devicePixelRatio;
+        this.gapY = gapY;
+        this.gapH = gapH;
+        this.speed = 4 + level * 0.7;
+        this.passed = false;
+      }
+      update() {
+        this.x -= this.speed * devicePixelRatio;
+      }
+      draw() {
+        ctx.save();
+        ctx.fillStyle = '#ff2e63';
+        // Top pipe
+        ctx.fillRect(this.x, 0, this.w, this.gapY - this.gapH / 2);
+        // Bottom pipe
+        ctx.fillRect(this.x, this.gapY + this.gapH / 2, this.w, height - this.gapY - this.gapH / 2);
+        ctx.restore();
+      }
+      offScreen() { return this.x + this.w < 0; }
+    }
 
-    // Draw food
-    foods.forEach(food => food.draw(ctx));
+    class PowerUp {
+      constructor() {
+        this.x = width + 50 * devicePixelRatio;
+        this.y = Math.random() * (height - 60 * devicePixelRatio) + 30 * devicePixelRatio;
+        this.r = 14 * devicePixelRatio;
+        this.speed = 4 + level * 0.7;
+        this.collected = false;
+      }
+      update() { this.x -= this.speed * devicePixelRatio; }
+      draw() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 16;
+        ctx.fill();
+        ctx.restore();
+      }
+      offScreen() { return this.x + this.r < 0; }
+    }
 
-    // Draw powerups
-    powerups.forEach(powerup => powerup.draw(ctx));
+    // --- Game Logic ---
+    let player, obstacles, powerUps, frameCount, scoreThisLevel, nextPowerSpawn;
 
-    // Draw enemies
-    enemies.forEach(enemy => enemy.draw(ctx));
+    function resetGameVars(levelNum=1) {
+      player = new Player();
+      obstacles = [];
+      powerUps = [];
+      frameCount = 0;
+      scoreThisLevel = 0;
+      nextPowerSpawn = Math.floor(Math.random()*120) + 180;
+      level = levelNum;
+      running = true;
+      paused = false;
+      gameOver = false;
+      scoreboard.textContent = `Score: ${score}`;
+      levelIndicator.textContent = `Level: ${level}`;
+    }
 
-    // Draw projectiles
-    projectiles.forEach(proj => {
-      ctx.save();
-      ctx.beginPath();
-      ctx.fillStyle = proj.color;
-      ctx.shadowColor = proj.color;
-      ctx.shadowBlur = 10;
-      ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+    function startGame() {
+      mainMenu.classList.remove('visible');
+      gameOverDiv.classList.remove('visible');
+      nextLevelDiv.classList.remove('visible');
+      lbDiv.classList.remove('visible');
+      score = 0;
+      resetGameVars(1);
+      requestId = requestAnimationFrame(gameLoop);
+    }
+
+    function nextLevel() {
+      nextLevelDiv.classList.remove('visible');
+      score += scoreThisLevel;
+      resetGameVars(level + 1);
+      playSFX('levelUp');
+      requestId = requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      running = false;
+      gameOver = true;
+      player.alive = false;
+      finalScoreEl.textContent = `Final Score: ${score} (Level ${level})`;
+      gameOverDiv.classList.add('visible');
+      // Save leaderboard
+      loadLeaderboard();
+      highScores.push({score, level});
+      highScores = highScores.sort((a, b) => b.score - a.score).slice(0, 10);
+      saveLeaderboard();
+      playSFX('die');
+    }
+
+    startBtn.onclick = startGame;
+    restartBtn.onclick = startGame;
+    nextLevelBtn.onclick = nextLevel;
+
+    // --- Controls ---
+    function handleFlap(e) {
+      if (!running || paused) return;
+      player.flapUp();
+    }
+    canvas.addEventListener('mousedown', handleFlap);
+    canvas.addEventListener('touchstart', handleFlap);
+
+    // --- Game Loop ---
+    function gameLoop() {
+      ctx.clearRect(0, 0, width, height);
+      // Background gradient
+      let grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, '#393e46');
+      grad.addColorStop(1, '#222831');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw and Update Player
+      player.update();
+      player.draw();
+
+      // Spawn Obstacles
+      if (frameCount % Math.max(90 - level*4, 40) === 0) {
+        let gapH = Math.max(110 - level*7, 60) * devicePixelRatio;
+        let gapY = Math.random() * (height - gapH*1.2) + gapH*0.6;
+        obstacles.push(new Obstacle(gapY, gapH));
+      }
+      obstacles.forEach(o => o.update());
+      obstacles.forEach(o => o.draw());
+      obstacles = obstacles.filter(o => !o.offScreen());
+
+      // Spawn PowerUp
+      if (frameCount > nextPowerSpawn && Math.random() < 0.01 + level*0.001) {
+        powerUps.push(new PowerUp());
+        nextPowerSpawn = frameCount + Math.floor(Math.random()*150) + 200;
+      }
+      powerUps.forEach(p => p.update());
+      powerUps.forEach(p => p.draw());
+      powerUps = powerUps.filter(p => !p.offScreen());
+
+      // Collision Detection
+      obstacles.forEach(o => {
+        // Player hit obstacle
+        if (!o.passed && !player.powered &&
+          player.x + player.r > o.x && player.x - player.r < o.x + o.w &&
+          (player.y - player.r < o.gapY - o.gapH / 2 || player.y + player.r > o.gapY + o.gapH / 2)) {
+            endGame();
+        }
+        // Count as passed
+        if (!o.passed && o.x + o.w < player.x - player.r) {
+          o.passed = true;
+          scoreThisLevel += 1;
+          scoreboard.textContent = `Score: ${score + scoreThisLevel}`;
+          playSFX('score');
+        }
+      });
+      // Player hit ground or ceiling
+      if (player.y + player.r > height || player.y - player.r < 0) {
+        endGame();
+      }
+      // PowerUp collection
+      powerUps.forEach(p => {
+        if (!p.collected &&
+          Math.abs(player.x - p.x) < player.r + p.r &&
+          Math.abs(player.y - p.y) < player.r + p.r) {
+            p.collected = true;
+            player.powerUp();
+            scoreThisLevel += 5;
+            scoreboard.textContent = `Score: ${score + scoreThisLevel}`;
+        }
+      });
+      powerUps = powerUps.filter(p => !p.collected);
+
+      // Particle Effects (simple)
+      if (player.powered) {
+        for (let i = 0; i < 8; i++) {
+          let px = player.x + Math.cos(i/8*2*Math.PI)*player.r*1.2;
+          let py = player.y + Math.sin(i/8*2*Math.PI)*player.r*1.2;
+          ctx.beginPath();
+          ctx.arc(px, py, 5 * devicePixelRatio, 0, Math.PI * 2);
+          ctx.fillStyle = '#eaffd0';
+          ctx.globalAlpha = 0.6;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      // Level Progression
+      if (scoreThisLevel >= 15 + level*5) {
+        running = false;
+        nextLevelInfo.textContent = `Get ready for Level ${level+1}!`;
+        nextLevelDiv.classList.add('visible');
+        score += scoreThisLevel;
+        levelIndicator.textContent = `Level: ${level+1}`;
+        playSFX('levelUp');
+        return;
+      }
+
+      // Next Frame
+      frameCount++;
+      if (running && !gameOver) requestId = requestAnimationFrame(gameLoop);
+    }
+
+    // --- Init Leaderboard ---
+    loadLeaderboard();
+    showLbBtn.onclick = showLeaderboard;
+    showLbBtnOver.onclick = showLeaderboard;
+
+    // --- Pause Feature ---
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'p') {
+        paused = !paused;
+        if (!paused && running) requestId = requestAnimationFrame(gameLoop);
+      }
     });
 
-    // Draw particles
-    particles.forEach(particle => particle.draw(ctx));
-
-    // Draw player
-    player.draw(ctx);
-  }
-
-  // Spawn particles for effects
-  function spawnParticles(x, y, color) {
-    for (let i = 0; i < 15; i++) {
-      particles.push(new Particle(x, y, color));
-    }
-  }
-
-  // Game over handler
-  function gameOver() {
-    gameRunning = false;
-    finalScoreDisplay.textContent = 'Your final score: ' + player.score;
-    updateLeaderboard(player.score);
-    renderLeaderboard(loadLeaderboard());
-    gameOverScreen.classList.remove('hidden');
-    startScreen.classList.add('hidden');
-  }
-
-  // Game loop
-  function gameLoop() {
-    update();
-    draw();
-    if (gameRunning) {
-      requestAnimationFrame(gameLoop);
-    }
-  }
-
-  // Event listeners
-  window.addEventListener('keydown', e => {
-    keys[e.key] = true;
-  });
-  window.addEventListener('keyup', e => {
-    keys[e.key] = false;
-  });
-
-  startBtn.addEventListener('click', () => {
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    resetGame();
-    gameLoop();
-  });
-
-  restartBtn.addEventListener('click', () => {
-    resetGame();
-    gameLoop();
-  });
-
-  // Initialize leaderboard display
-  renderLeaderboard(loadLeaderboard());
-</script>
+    // --- Show Main Menu on Load ---
+    mainMenu.classList.add('visible');
+  </script>
 </body>
 </html>
